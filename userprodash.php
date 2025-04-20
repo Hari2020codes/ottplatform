@@ -4,7 +4,7 @@ session_start();
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'user') {
-    header("Location: ../logandreg.php");
+    header("Location:logandreg.php");
     exit();
 }
 
@@ -102,6 +102,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
         }
     }
 }
+
+// Count total watched items
+$countHistoryQuery = "SELECT COUNT(*) as count FROM watch_history WHERE user_id = '$userId'";
+$countHistoryResult = $conn->query($countHistoryQuery);
+$historyCount = $countHistoryResult->fetch_assoc()['count'];
+
+// Count watchlist items
+$countWatchlistQuery = "SELECT COUNT(*) as count FROM watchlist WHERE user_id = '$userId'";
+$countWatchlistResult = $conn->query($countWatchlistQuery);
+$watchlistCount = $countWatchlistResult->fetch_assoc()['count'];
 ?>
 
 <!DOCTYPE html>
@@ -111,232 +121,238 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile - MovieZone</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="cssfiles/userprostyle.css"> <!-- Link to your CSS file -->
     <style>
-        :root {
-            --primary-color: #1a237e;
-            --secondary-color: #0d47a1;
-            --text-light: #ffffff;
-            --text-dark: #333333;
-            --bg-dark: #121212;
-            --bg-lighter: #1e1e1e;
-            --accent-color: #ff4081;
-            --success-color: #4caf50;
-            --warning-color: #ff9800;
-            --danger-color: #f44336;
-        }
         
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>MovieZone</h1>
+                </div>
+                <div class="user-menu">
+                    <div class="user-info" id="userMenuButton">
+                        <div class="user-avatar">
+                            <?php echo strtoupper(substr($userData['username'], 0, 1)); ?>
+                        </div>
+                        <span><?php echo $userData['username']; ?></span>
+                        <i class="fas fa-chevron-down" style="margin-left: 10px;"></i>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <ul>
+                            <li><a href="userprodash.php"><i class="fas fa-user-circle"></i>My Profile</a></li>
+                            <li><a href="watchlist.php"><i class="fas fa-bookmark"></i>My Watchlist</a></li>
+                            <li><a href="history.php"><i class="fas fa-history"></i>Watch History</a></li>
+                            <li class="divider"></li>
+                            <li><a href="movies.php"><i class="fas fa-film"></i>Movies</a></li>
+                            <li><a href="tvseries.php"><i class="fas fa-tv"></i>TV Series</a></li>
+                            <li><a href="blog.php"><i class="fas fa-blog"></i>Blog</a></li>
+                            <li class="divider"></li>
+                            <li><a href="../logout.php"><i class="fas fa-sign-out-alt"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="profile-header">
+                <div class="page-title">
+                    <h2>My Profile</h2>
+                    <p>Manage your account and see your activity</p>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- Profile Card -->
+                <div class="profile-card">
+                    <div class="profile-info">
+                        <div class="profile-avatar">
+                            <?php echo strtoupper(substr($userData['username'], 0, 1)); ?>
+                        </div>
+                        <h3 class="profile-name"><?php echo $userData['username']; ?></h3>
+                        <p class="profile-email"><?php echo $userData['email']; ?></p>
+                    </div>
+
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <div class="stat-number"><?php echo $historyCount; ?></div>
+                            <div class="stat-label">Watched</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number"><?php echo $watchlistCount; ?></div>
+                            <div class="stat-label">Watchlist</div>
+                        </div>
+                    </div>
+
+                    <div class="profile-actions">
+                        <a href="watchlist.php"><i class="fas fa-bookmark" style="margin-right: 8px;"></i>My Watchlist</a>
+                        <a href="history.php"><i class="fas fa-history" style="margin-right: 8px;"></i>Watch History</a>
+                    </div>
+
+                    <!-- Edit Profile Form -->
+                    <div class="edit-profile-form">
+                        <h3 style="margin-bottom: 20px;">Edit Profile</h3>
+                        
+                        <?php if (!empty($message)): ?>
+                            <div class="alert alert-success">
+                                <?php echo $message; ?>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($error)): ?>
+                            <div class="alert alert-danger">
+                                <?php echo $error; ?>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <form method="post" action="">
+                            <div class="form-group">
+                                <label for="username">Username</label>
+                                <input type="text" class="form-control" id="username" name="username" value="<?php echo $userData['username']; ?>" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" value="<?php echo $userData['email']; ?>" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="current_password">Current Password (leave blank to keep current)</label>
+                                <input type="password" class="form-control" id="current_password" name="current_password">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="new_password">New Password</label>
+                                <input type="password" class="form-control" id="new_password" name="new_password">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="confirm_password">Confirm New Password</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                            </div>
+                            
+                            <button type="submit" name="update_profile" class="btn-primary">Update Profile</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Dashboard Sections -->
+                <div class="dashboard-sections">
+                    <!-- Watch History Section -->
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h3 class="section-title">Recent Watch History</h3>
+                            <a href="history.php" class="view-all">View All <i class="fas fa-chevron-right"></i></a>
+                        </div>
+                        
+                        <?php if ($historyResult->num_rows > 0): ?>
+                            <div class="content-grid">
+                                <?php while ($historyItem = $historyResult->fetch_assoc()): ?>
+                                    <div class="content-item">
+                                        <img src="../uploads/<?php echo $historyItem['image']; ?>" alt="<?php echo $historyItem['title']; ?>" class="content-image">
+                                        <div class="content-overlay">
+                                            <div class="content-title"><?php echo $historyItem['title']; ?></div>
+                                            <div class="content-info">
+                                                <span><?php echo ucfirst($historyItem['type']); ?></span>
+                                                <span><?php echo date("M d, Y", strtotime($historyItem['watched_at'])); ?></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endwhile; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="empty-state">
+                                <i class="fas fa-film"></i>
+                                <p>No watch history found. Start watching to see your history here!</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <!-- Watchlist Section -->
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h3 class="section-title">My Watchlist</h3>
+                            <a href="watchlist.php" class="view-all">View All <i class="fas fa-chevron-right"></i></a>
+                        </div>
+                        
+                        <?php if ($watchlistResult->num_rows > 0): ?>
+                            <div class="content-grid">
+                                <?php while ($watchlistItem = $watchlistResult->fetch_assoc()): ?>
+                                    <div class="content-item">
+                                        <img src="../uploads/<?php echo $watchlistItem['image']; ?>" alt="<?php echo $watchlistItem['title']; ?>" class="content-image">
+                                        <div class="content-overlay">
+                                            <div class="content-title"><?php echo $watchlistItem['title']; ?></div>
+                                            <div class="content-info">
+                                                <span><?php echo ucfirst($watchlistItem['type']); ?></span>
+                                                <span><?php echo date("M d, Y", strtotime($watchlistItem['added_at'])); ?></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endwhile; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="empty-state">
+                                <i class="fas fa-bookmark"></i>
+                                <p>Your watchlist is empty. Add content to your watchlist!</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <!-- Recently Added Content -->
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h3 class="section-title">Recently Added</h3>
+                            <a href="browse.php" class="view-all">View All <i class="fas fa-chevron-right"></i></a>
+                        </div>
+                        
+                        <?php if ($recentContentResult->num_rows > 0): ?>
+                            <div class="content-grid">
+                                <?php while ($contentItem = $recentContentResult->fetch_assoc()): ?>
+                                    <div class="content-item">
+                                        <img src="../uploads/<?php echo $contentItem['image']; ?>" alt="<?php echo $contentItem['title']; ?>" class="content-image">
+                                        <div class="content-overlay">
+                                            <div class="content-title"><?php echo $contentItem['title']; ?></div>
+                                            <div class="content-info">
+                                                <span><?php echo ucfirst($contentItem['type']); ?></span>
+                                                <span><?php echo date("M d, Y", strtotime($contentItem['date'])); ?></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endwhile; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="empty-state">
+                                <i class="fas fa-video"></i>
+                                <p>No content available yet. Check back soon!</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // User dropdown menu toggle
+        document.getElementById('userMenuButton').addEventListener('click', function() {
+            document.getElementById('userDropdown').classList.toggle('active');
+        });
         
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        
-        /* Header Styles */
-        header {
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-        
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-        }
-        
-        .logo h1 {
-            font-size: 1.8rem;
-            color: var(--accent-color);
-            letter-spacing: 1px;
-        }
-        
-        .user-menu {
-            position: relative;
-        }
-        
-        .user-info {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            padding: 8px 12px;
-            border-radius: 50px;
-            transition: all 0.3s ease;
-        }
-        
-        .user-info:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        .user-avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background-color: var(--accent-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            margin-right: 10px;
-        }
-        
-        .user-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background-color: var(--bg-lighter);
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            min-width: 200px;
-            z-index: 10;
-            display: none;
-        }
-        
-        .user-dropdown.active {
-            display: block;
-        }
-        
-        .user-dropdown ul {
-            list-style: none;
-            padding: 10px 0;
-        }
-        
-        .user-dropdown li {
-            padding: 0;
-        }
-        
-        .user-dropdown a {
-            display: flex;
-            align-items: center;
-            padding: 12px 20px;
-            color: var(--text-light);
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-        
-        .user-dropdown a:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        .user-dropdown i {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
-        }
-        
-        .divider {
-            height: 1px;
-            background-color: rgba(255, 255, 255, 0.1);
-            margin: 8px 0;
-        }
-        
-        /* Main Content */
-        .main-content {
-            padding: 30px 0;
-        }
-        
-        .profile-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-        
-        .page-title h2 {
-            font-size: 2rem;
-            font-weight: 600;
-        }
-        
-        .page-title p {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-top: 5px;
-        }
-        
-        /* Dashboard Grid */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 30px;
-        }
-        
-        /* Profile Card */
-        .profile-card {
-            background-color: var(--bg-lighter);
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        .profile-info {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        
-        .profile-avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background-color: var(--accent-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            font-weight: 600;
-            margin: 0 auto 15px;
-        }
-        
-        .profile-name {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-        
-        .profile-email {
-            font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        .profile-stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-item {
-            background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-        }
-        
-        .stat-number {
-            font-size: 1.8rem;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: var(--accent-color);
-        }
-        
-        .stat-label {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        .profile-actions a {
-            display:
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const userMenu = document.getElementById('userMenuButton');
+            const userDropdown = document.getElementById('userDropdown');
+            
+            if (!userMenu.contains(event.target) && !userDropdown.contains(event.target)) {
+                userDropdown.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
